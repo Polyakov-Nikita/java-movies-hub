@@ -49,7 +49,7 @@ public class PostMoviesHandler extends BaseHttpHandler {
 
     private Optional<Movie> getMovie(InputStream bodyStream) {
         String body = new String(getBodyBytes(bodyStream), StandardCharsets.UTF_8);
-        if(body.isEmpty()) {
+        if (body.isEmpty()) {
             return Optional.empty();
         }
         return parseMovie(body);
