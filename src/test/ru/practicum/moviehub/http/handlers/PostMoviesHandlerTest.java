@@ -9,7 +9,6 @@ import ru.practicum.moviehub.http.HttpConstants;
 import ru.practicum.moviehub.http.HttpStatusCode;
 import ru.practicum.moviehub.http.MoviesServer;
 import ru.practicum.moviehub.model.Movie;
-import ru.practicum.moviehub.model.StoredMovie;
 import ru.practicum.moviehub.utils.JsonUtility;
 import ru.practicum.moviehub.utils.TestUtility;
 
@@ -65,7 +64,7 @@ public class PostMoviesHandlerTest {
         String description = "Ожидается фильм с присвоенным ID";
         HttpRequest request = createRequest(MOVIE_CORRECT);
         HttpResponse<String> response = TestUtility.sendRequest(request);
-        StoredMovie movie = JsonUtility.deserialize(response.body(), StoredMovie.class);
+        Movie movie = JsonUtility.deserialize(response.body(), Movie.class);
         assertTrue(movie.id() > 0, description);
     }
 
@@ -113,6 +112,26 @@ public class PostMoviesHandlerTest {
     @Test
     public void postMovies_IncorrectContentType_ContentType() {
         HttpRequest request = createTypelessRequest();
+        TestUtility.assertContentType(request);
+    }
+
+    @Test
+    public void postMovies_EmptyRequestBody_StatusCode() {
+        HttpRequest request = createEmptyBodyRequest();
+        TestUtility.assertStatusCode(request, HttpStatusCode.UNSUPPORTED_MEDIA_TYPE);
+    }
+
+    private HttpRequest createEmptyBodyRequest() {
+        return HttpRequest.newBuilder()
+                .uri(TestUtility.createURI())
+                .POST(HttpRequest.BodyPublishers.ofString(""))
+                .header(HttpConstants.CONTENT_TYPE, HttpConstants.CONTENT_TYPE_JSON)
+                .build();
+    }
+
+    @Test
+    public void postMovies_EmptyRequestBody_ContentType() {
+        HttpRequest request = createEmptyBodyRequest();
         TestUtility.assertContentType(request);
     }
 }

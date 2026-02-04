@@ -1,18 +1,19 @@
 package ru.practicum.moviehub.http.handlers;
 
+import com.google.gson.JsonSyntaxException;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import ru.practicum.moviehub.http.HttpConstants;
 import ru.practicum.moviehub.http.HttpStatusCode;
 import ru.practicum.moviehub.http.handlers.validation.MovieValidator;
 import ru.practicum.moviehub.model.Movie;
-import ru.practicum.moviehub.model.StoredMovie;
 import ru.practicum.moviehub.store.MoviesStore;
 import ru.practicum.moviehub.utils.JsonUtility;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 
 public class PostMoviesHandler extends BaseHttpHandler {
     public static final String VALIDATION_ERROR_MESSAGE = "Ошибка валидации";
@@ -27,7 +28,7 @@ public class PostMoviesHandler extends BaseHttpHandler {
     @Override
     public void handle(HttpExchange exchange) {
         if (isJSONContentType(exchange.getRequestHeaders())) {
-            processMovie(exchange);
+            processRequest(exchange);
         } else {
             sendNoContent(exchange, HttpStatusCode.UNSUPPORTED_MEDIA_TYPE);
         }
@@ -38,8 +39,31 @@ public class PostMoviesHandler extends BaseHttpHandler {
         return contentTypeHeaderValue != null && contentTypeHeaderValue.equals(HttpConstants.CONTENT_TYPE_JSON);
     }
 
-    private void processMovie(HttpExchange exchange) {
-        Movie movie = getMovie(exchange.getRequestBody());
+    private void processRequest(HttpExchange exchange) {
+        Optional<Movie> movieOptional = getMovie(exchange.getRequestBody());
+        movieOptional.ifPresentOrElse(
+                movie -> processMovie(exchange, movie),
+                () -> sendNoContent(exchange, HttpStatusCode.UNSUPPORTED_MEDIA_TYPE)
+        );
+    }
+
+    private Optional<Movie> getMovie(InputStream bodyStream) {
+        String body = new String(getBodyBytes(bodyStream), StandardCharsets.UTF_8);
+        if(body.isEmpty()) {
+            return Optional.empty();
+        }
+        return parseMovie(body);
+    }
+
+    private static Optional<Movie> parseMovie(String body) {
+        try {
+            return Optional.of(JsonUtility.deserialize(body, Movie.class));
+        } catch (JsonSyntaxException e) {
+            return Optional.empty();
+        }
+    }
+
+    private void processMovie(HttpExchange exchange, Movie movie) {
         List<String> validatorMessages = validator.validate(movie);
         if (validatorMessages.isEmpty()) {
             addToStore(exchange, movie);
@@ -48,23 +72,13 @@ public class PostMoviesHandler extends BaseHttpHandler {
         }
     }
 
-    private Movie getMovie(InputStream bodyStream) {
-        String body = new String(getBodyBytes(bodyStream), StandardCharsets.UTF_8);
-        return JsonUtility.deserialize(body, Movie.class);
-    }
-
     private void addToStore(HttpExchange exchange, Movie movie) {
         int id = store.add(movie);
-        StoredMovie storedMovie = createStored(movie, id);
-        sendStoredMovie(storedMovie, exchange);
+        sendStoredMovie(exchange, new Movie(movie, id));
     }
 
-    private StoredMovie createStored(Movie movie, int id) {
-        return new StoredMovie(movie.title(), movie.year(), id);
-    }
-
-    private void sendStoredMovie(StoredMovie storedMovie, HttpExchange exchange) {
-        String movieJson = JsonUtility.serialize(storedMovie);
+    private void sendStoredMovie(HttpExchange exchange, Movie movie) {
+        String movieJson = JsonUtility.serialize(movie);
         sendJson(exchange, HttpStatusCode.CREATED, movieJson);
     }
 
