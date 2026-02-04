@@ -28,7 +28,7 @@ public class MovieValidatorTest {
     @Test
     public void validate_IncorrectTitle_TooLongTitle() {
         String description = "В списке сообщений должна быть одна запись о длинном названии";
-        Movie movie = new Movie("t" .repeat(MovieValidator.MAX_TITLE_LENGTH + 1), TestUtility.CORRECT_YEAR);
+        Movie movie = new Movie("t".repeat(MovieValidator.MAX_TITLE_LENGTH + 1), TestUtility.CORRECT_YEAR);
         assertEquals(1, VALIDATOR.validate(movie).size(), description);
         assertEquals(MovieValidator.LONG_TITLE_MESSAGE, VALIDATOR.validate(movie).getFirst(), description);
     }
