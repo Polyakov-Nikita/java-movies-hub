@@ -12,7 +12,7 @@ import java.util.Optional;
 public class GetMoviesHandler extends BaseHttpHandler {
     public static final String YEAR_PARAMETER = "year";
     public static final String INCORRECT_YEAR_PARAMETER_MESSAGE = "Некорректный параметр запроса";
-    public static final String INCORRECT_YEAR_MESSAGE = "Значение параметра запроса '"+ YEAR_PARAMETER + "' не число";
+    public static final String INCORRECT_YEAR_MESSAGE = "Значение параметра запроса '" + YEAR_PARAMETER + "' не число";
 
     private static final int QUERY_PARTS_LENGTH = 2;
 
